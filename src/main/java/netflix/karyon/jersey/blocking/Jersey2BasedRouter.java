@@ -1,8 +1,10 @@
 package netflix.karyon.jersey.blocking;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.reactivex.netty.protocol.http.server.HttpRequestHeaders;
 import io.reactivex.netty.protocol.http.server.HttpResponseHeaders;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
@@ -15,6 +17,7 @@ import java.net.URI;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
@@ -32,9 +35,7 @@ import org.glassfish.jersey.server.ContainerFactory;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.PropertiesBasedResourceConfig;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
-import org.glassfish.jersey.server.spi.ContainerResponseWriter.TimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,17 +46,13 @@ import rx.schedulers.Schedulers;
 
 import com.google.inject.Injector;
 
-/**
- * @author Nitesh Kant
- */
 public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 
-    private static final Logger logger = LoggerFactory.getLogger(Jersey2BasedRouter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Jersey2BasedRouter.class);
 
     private final PropertiesBasedResourceConfig resourceConfig;
     private final Injector injector;
     private ApplicationHandler application;
-//    private NettyToJerseyBridge nettyToJerseyBridge;
 
     public Jersey2BasedRouter() {
         this(null);
@@ -79,13 +76,12 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 //        }
         Application app = container.getApplication();
         application =  new ApplicationHandler(app);
-//        nettyToJerseyBridge = container.getNettyToJerseyBridge();
-        logger.info("Started Jersey based request router.");
+        LOG.info("Started Jersey based request router.");
     }
 
     @PreDestroy
     public void stop() {
-        logger.info("Stopped Jersey based request router.");
+        LOG.info("Stopped Jersey based request router.");
         // application.destroy(); ? TODO
     }
     
@@ -99,9 +95,16 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     		PropertiesDelegate delegate = resourceConfig.getPropertiesDelegate();
     		
     		ContainerRequest containerRequest = new ContainerRequest(baseUri, uri, request.getHttpMethod().name(), 
-    				getSecurityContext(), delegate); 
+    				getSecurityContext(), delegate);
     		
-//        	final ContainerRequest containerRequest = nettyToJerseyBridge.bridgeRequest( request, requestData ); // TODO
+    		final HttpRequestHeaders headers = request.getHeaders();
+    		if (headers != null && !headers.isEmpty()) {
+    			Set<String> names = headers.names();
+    			for (String key : names) {
+    				containerRequest.getHeaders().add(key, headers.get(key));
+				}
+    		}
+    		containerRequest.setEntityStream(requestData);
     		final ContainerResponseWriter containerResponse = bridgeResponse(response);
     		containerRequest.setWriter(containerResponse);
     		return Observable.create(new Observable.OnSubscribe<Void>() {
@@ -111,15 +114,15 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     					application.handle(containerRequest); // TODO
     					subscriber.onCompleted();
     				} catch (Exception e) {
-    					logger.error("Failed to handle request.", e);
+    					LOG.error("Failed to handle request.", e);
     					subscriber.onError(e);
     				}
     				finally {
-    					//close input stream and release all data we buffered, ignore errors
     					try {
     						requestData.close();
     					}
     					catch( IOException e ) {
+    						// NOOP
     					}
     				}
     			}
@@ -131,51 +134,10 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     			}
     		}).subscribeOn(Schedulers.io());
     	} catch (Exception e) {
-    		logger.error("Ferrou!", e);
+    		LOG.error("Ferrou!", e);
     		return null;
     	}
 
-        /*
-         * Creating the Container request eagerly, subscribes to the request content eagerly. Failure to do so, will
-          * result in expiring/loss of content.
-         */
-
-        //we have to close input stream, to emulate normal lifecycle
-       
-    	
-    	
-    	/*final InputStream requestData = new HttpContentInputStream( response.getAllocator(), request.getContent() );
-        
-        final ContainerRequest containerRequest = nettyToJerseyBridge.bridgeRequest( request, requestData ); // TODO
-        final ContainerResponseWriter containerResponse = nettyToJerseyBridge.bridgeResponse(response);
-
-        return Observable.create(new Observable.OnSubscribe<Void>() {
-            @Override
-            public void call(Subscriber<? super Void> subscriber) {
-                try {
-                	application.handle(containerRequest); // TODO
-                    subscriber.onCompleted();
-                } catch (Exception e) {
-                    logger.error("Failed to handle request.", e);
-                    subscriber.onError(e);
-                }
-                finally {
-                  
-                  //close input stream and release all data we buffered, ignore errors
-                  try {
-                    requestData.close();
-                  }
-                  catch( IOException e ) {
-                  }
-                }
-            }
-        }).doOnTerminate(new Action0() {
-            @Override
-            public void call() {
-                response.close(true); // Since this runs in a different thread, it needs an explicit flush,
-                                        // else the LastHttpContent will never be flushed and the client will not finish.
-            }
-        }).subscribeOn(Schedulers.io()); */ /*Since this blocks on subscription*/
     }
     
     public SecurityContext getSecurityContext () {
