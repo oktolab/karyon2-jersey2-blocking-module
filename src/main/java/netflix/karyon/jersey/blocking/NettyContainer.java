@@ -2,10 +2,6 @@ package netflix.karyon.jersey.blocking;
 
 import javax.ws.rs.core.Application;
 
-
-/**
- * @author Nitesh Kant
- */
 public class NettyContainer { // OK
 
     private final Application application; // com.sun.jersey.spi.container.WebApplication;

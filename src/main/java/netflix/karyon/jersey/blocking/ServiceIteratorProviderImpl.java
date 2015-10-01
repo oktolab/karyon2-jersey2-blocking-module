@@ -7,9 +7,6 @@ import org.glassfish.jersey.server.spi.ContainerProvider;
 
 import com.google.common.collect.Iterators;
 
-/**	
-* @author Nitesh Kant
-*/
 @SuppressWarnings("rawtypes")
 class ServiceIteratorProviderImpl<T> extends ServiceFinder.ServiceIteratorProvider {
 

@@ -3,9 +3,6 @@ package netflix.karyon.jersey.blocking;
 import io.netty.buffer.ByteBuf;
 import netflix.karyon.transport.http.KaryonHttpModule;
 
-/**
- * @author Nitesh Kant
- */
 public abstract class KaryonJersey2Module extends KaryonHttpModule<ByteBuf, ByteBuf> { // OK
 
     public KaryonJersey2Module() {

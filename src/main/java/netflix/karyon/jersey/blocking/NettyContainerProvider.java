@@ -9,17 +9,14 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-/**
- * @author Nitesh Kant
- */
+
 public class NettyContainerProvider implements ContainerProvider { // OK
 
     private static final Logger logger = LoggerFactory.getLogger(NettyContainerProvider.class);
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T createContainer(Class<T> type, Application application)
-			throws ProcessingException {
+	public <T> T createContainer(Class<T> type, Application application) throws ProcessingException {
 		Preconditions.checkNotNull(type);
       Preconditions.checkNotNull(application);
       if (!type.equals(NettyContainer.class)) {
@@ -31,16 +28,4 @@ public class NettyContainerProvider implements ContainerProvider { // OK
 	}
 
     
-//    public <T> T createContainer(Class<T> type, Application application) throws ProcessingException
-//    @Override
-//    public NettyContainer createContainer(Class<NettyContainer> type, Application application) throws ProcessingException {
-//        Preconditions.checkNotNull(type);
-//        Preconditions.checkNotNull(application);
-//        if (!type.equals(NettyContainer.class)) {
-//            logger.error(
-//                    "Netty container provider can only create container of type {}. Invoked to create container of type {}",
-//                    NettyContainer.class.getName(), type.getName());
-//        }
-//        return new NettyContainer(application);
-//    }
 }
