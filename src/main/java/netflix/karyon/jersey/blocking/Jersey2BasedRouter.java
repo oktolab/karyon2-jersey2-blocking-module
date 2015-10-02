@@ -94,6 +94,12 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     		URI uri = new URI(request.getUri());
     		PropertiesDelegate delegate = resourceConfig.getPropertiesDelegate();
     		
+    		if ("/favicon.ico".equals(uri.getPath())) {
+    			// TODO GET BEHAVIOR FROM MODULE CLASS
+    			request.ignoreContent();
+    			return response.close();
+    		}
+    		
     		ContainerRequest containerRequest = new ContainerRequest(baseUri, uri, request.getHttpMethod().name(), 
     				getSecurityContext(), delegate);
     		
