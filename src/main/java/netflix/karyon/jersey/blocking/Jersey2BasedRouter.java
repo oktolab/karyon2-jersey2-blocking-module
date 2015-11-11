@@ -1,7 +1,6 @@
 package netflix.karyon.jersey.blocking;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpRequestHeaders;
@@ -34,7 +33,6 @@ import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerFactory;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
-import org.glassfish.jersey.server.PropertiesBasedResourceConfig;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +41,7 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action0;
 import rx.schedulers.Schedulers;
+import br.com.oktolab.jersey.server.PropertiesBasedResourceConfig;
 
 import com.google.inject.Injector;
 
@@ -61,18 +60,18 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     @Inject
     public Jersey2BasedRouter(Injector injector) {
         this.injector = injector;
-        resourceConfig = new PropertiesBasedResourceConfig();
         ServiceIteratorProviderImpl.registerWithJersey();
+        resourceConfig = new PropertiesBasedResourceConfig();
     }
     
     @PostConstruct
     public void start() {
-        NettyContainer container;
+        NettyContainer container = ContainerFactory.createContainer(NettyContainer.class, resourceConfig);
 //        if (null != injector) {
 //            container = ContainerFactory.createContainer(NettyContainer.class, application);/* resourceConfig,
 //                                                         new GuiceComponentProviderFactory(resourceConfig, injector));*/
 //        } else {
-            container = ContainerFactory.createContainer(NettyContainer.class, resourceConfig);
+//            container = ContainerFactory.createContainer(NettyContainer.class, resourceConfig);
 //        }
         Application app = container.getApplication();
         application =  new ApplicationHandler(app);
