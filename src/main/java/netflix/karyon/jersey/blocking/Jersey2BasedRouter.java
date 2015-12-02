@@ -33,6 +33,7 @@ import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerFactory;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,32 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     private final PropertiesBasedResourceConfig resourceConfig;
     private final Injector injector;
     private ApplicationHandler application;
+    
+    /**
+     * Default dummy security context.
+     */
+    private static final SecurityContext DEFAULT_SECURITY_CONTEXT = new SecurityContext() {
+
+        @Override
+        public boolean isUserInRole(final String role) {
+            return false;
+        }
+
+        @Override
+        public boolean isSecure() {
+            return false;
+        }
+
+        @Override
+        public Principal getUserPrincipal() {
+            return null;
+        }
+
+        @Override
+        public String getAuthenticationScheme() {
+            return null;
+        }
+    };
 
     public Jersey2BasedRouter() {
         this(null);
@@ -62,6 +89,7 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
         this.injector = injector;
         ServiceIteratorProviderImpl.registerWithJersey();
         resourceConfig = new PropertiesBasedResourceConfig();
+        resourceConfig.register(RolesAllowedDynamicFeature.class);
     }
     
     @PostConstruct
@@ -71,7 +99,7 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 //            container = ContainerFactory.createContainer(NettyContainer.class, application);/* resourceConfig,
 //                                                         new GuiceComponentProviderFactory(resourceConfig, injector));*/
 //        } else {
-//            container = ContainerFactory.createContainer(NettyContainer.class, resourceConfig);
+//            container = ContainerFactory.createContainer(NettyContainer.class, resourceCosenfig);
 //        }
         Application app = container.getApplication();
         application =  new ApplicationHandler(app);
@@ -87,7 +115,7 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     @Override
     public Observable<Void> handle(final HttpServerRequest<ByteBuf> request, final HttpServerResponse<ByteBuf> response) {
     	try {
-    		final InputStream requestData = new HttpContentInputStream( response.getAllocator(), request.getContent() );
+    		final InputStream requestData = new HttpContentInputStream(response.getAllocator(), request.getContent());
     		
     		URI baseUri = new URI("/");
     		URI uri = new URI(request.getUri());
@@ -100,7 +128,7 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     		}
     		
     		ContainerRequest containerRequest = new ContainerRequest(baseUri, uri, request.getHttpMethod().name(), 
-    				getSecurityContext(), delegate);
+    				DEFAULT_SECURITY_CONTEXT, delegate);
     		
     		final HttpRequestHeaders headers = request.getHeaders();
     		if (headers != null && !headers.isEmpty()) {
@@ -139,39 +167,10 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     			}
     		}).subscribeOn(Schedulers.io());
     	} catch (Exception e) {
-    		LOG.error("Ferrou!", e);
+    		LOG.error("Error!", e);
     		return null;
     	}
 
-    }
-    
-    public SecurityContext getSecurityContext () {
-		return  new SecurityContext() {
-			
-			@Override
-			public boolean isUserInRole(String role) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-			
-			@Override
-			public boolean isSecure() {
-				// TODO Auto-generated method stub
-				return true;
-			}
-			
-			@Override
-			public Principal getUserPrincipal() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-			
-			@Override
-			public String getAuthenticationScheme() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-		};
     }
     
     ContainerResponseWriter bridgeResponse(final HttpServerResponse<ByteBuf> serverResponse) {
