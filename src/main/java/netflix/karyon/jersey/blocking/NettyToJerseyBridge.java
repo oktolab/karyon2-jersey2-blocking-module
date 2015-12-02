@@ -23,19 +23,19 @@ final class NettyToJerseyBridge {
     }
     
 
-    ContainerRequest bridgeRequest(final HttpServerRequest<ByteBuf> nettyRequest, InputStream requestData ) {
-        try {
-            URI baseUri = new URI("/"); // Since the netty server does not have a context path element as such, so base uri is always /
-            URI uri = new URI(nettyRequest.getUri());
-            return new ContainerRequest(baseUri, uri, nettyRequest.getHttpMethod().name(), null, null); // TODO
-//            		SecurityContext, PropertiesDelegate);
-//          return new ContainerRequest(application, nettyRequest.getHttpMethod().name(),
-//           	 								baseUri, uri, new JerseyRequestHeadersAdapter(nettyRequest.getHeaders()),
-//            									requestData );
-        } catch (URISyntaxException e) {
-            logger.error(String.format("Invalid request uri: %s", nettyRequest.getUri()), e);
-            throw new IllegalArgumentException(e);
-        }
-    }
+//    ContainerRequest bridgeRequest(final HttpServerRequest<ByteBuf> nettyRequest, InputStream requestData ) {
+//        try {
+//            URI baseUri = new URI("/"); // Since the netty server does not have a context path element as such, so base uri is always /
+//            URI uri = new URI(nettyRequest.getUri());
+//            return new ContainerRequest(baseUri, uri, nettyRequest.getHttpMethod().name(), null, null); // TODO
+////            		SecurityContext, PropertiesDelegate);
+////          return new ContainerRequest(application, nettyRequest.getHttpMethod().name(),
+////           	 								baseUri, uri, new JerseyRequestHeadersAdapter(nettyRequest.getHeaders()),
+////            									requestData );
+//        } catch (URISyntaxException e) {
+//            logger.error(String.format("Invalid request uri: %s", nettyRequest.getUri()), e);
+//            throw new IllegalArgumentException(e);
+//        }
+//    }
 
 }
