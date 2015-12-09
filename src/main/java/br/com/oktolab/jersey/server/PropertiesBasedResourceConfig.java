@@ -23,9 +23,8 @@ import org.slf4j.LoggerFactory;
 public class PropertiesBasedResourceConfig extends ResourceConfig {
 
 	private static final Logger logger = LoggerFactory.getLogger(PropertiesBasedResourceConfig.class);
-//    private static final String JERSEY_ROOT_PACKAGE = "com.sun.jersey";
 	private static final String JERSEY_ROOT_PACKAGE = "jersey.config.server.provider.packages";
-    public static final String PROPERTY_PACKAGES = "com.sun.jersey.config.property.packages";
+	public static final String PROPERTY_PACKAGES = JERSEY_ROOT_PACKAGE;
     public static final String COMMON_DELIMITERS = " ,;\n";
     
     private volatile boolean initialized;
@@ -40,12 +39,6 @@ public class PropertiesBasedResourceConfig extends ResourceConfig {
     	return typeSafePropertiesDelegate;
     }
     
-//    @Override
-//    Set<Class<?>> _getClasses() {
-//    	initIfRequired();
-//    	return super._getClasses();
-//    }
-    
 	private synchronized void initIfRequired() {
         if (initialized) {
             return;
@@ -59,7 +52,7 @@ public class PropertiesBasedResourceConfig extends ResourceConfig {
             String[] pkgNames = getElements(new String[]{pkgNamesStr}, COMMON_DELIMITERS);
             logger.info("Packages to scan by jersey {}", Arrays.toString(pkgNames));
             
-            registerFinder(new PackageNamesScanner(pkgNames, true)); // TODO init(
+            registerFinder(new PackageNamesScanner(pkgNames, true)); // TODO param recursive
         }
         Map<String, Object> jerseyProperties = createPropertiesMap();
         setProperties(jerseyProperties); // TODO setPropertiesAndFeatures
