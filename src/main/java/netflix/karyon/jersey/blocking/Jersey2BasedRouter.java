@@ -95,12 +95,6 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     @PostConstruct
     public void start() {
         NettyContainer container = ContainerFactory.createContainer(NettyContainer.class, resourceConfig);
-//        if (null != injector) {
-//            container = ContainerFactory.createContainer(NettyContainer.class, application);/* resourceConfig,
-//                                                         new GuiceComponentProviderFactory(resourceConfig, injector));*/
-//        } else {
-//            container = ContainerFactory.createContainer(NettyContainer.class, resourceCosenfig);
-//        }
         Application app = container.getApplication();
         application =  new ApplicationHandler(app);
         LOG.info("Started Jersey based request router.");
@@ -144,13 +138,12 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     			@Override
     			public void call(Subscriber<? super Void> subscriber) {
     				try {
-    					application.handle(containerRequest); // TODO
+    					application.handle(containerRequest);
     					subscriber.onCompleted();
     				} catch (Exception e) {
     					LOG.error("Failed to handle request.", e);
     					subscriber.onError(e);
-    				}
-    				finally {
+    				} finally {
     					try {
     						requestData.close();
     					}
@@ -180,8 +173,7 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 
             @Override
             public OutputStream writeResponseStatusAndHeaders(
-					long contentLength, ContainerResponse response)
-					throws ContainerException {
+            		final long contentLength, final ContainerResponse response) throws ContainerException {
                 int responseStatus = response.getStatus();
                 serverResponse.setStatus(HttpResponseStatus.valueOf(responseStatus));
                 HttpResponseHeaders responseHeaders = serverResponse.getHeaders();
@@ -194,31 +186,34 @@ public class Jersey2BasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 			@Override
 			public boolean suspend(long timeOut, TimeUnit timeUnit,
 					TimeoutHandler timeoutHandler) {
-				// TODO Auto-generated method stub
 				return false;
 			}
 
 			@Override
 			public void setSuspendTimeout(long timeOut, TimeUnit timeUnit)
 					throws IllegalStateException {
-				// TODO Auto-generated method stub
-				
 			}
 
 			@Override
 			public void commit() {
-				serverResponse.writeAndFlush(contentBuffer); // TODO CHECK
+				if (contentBuffer.isReadable()) {
+					serverResponse.writeAndFlush(contentBuffer);
+				} else {
+					contentBuffer.release();
+					serverResponse.flush();
+				}
 			}
 
 			@Override
 			public void failure(Throwable error) {
-				// TODO Auto-generated method stub
-				
+				LOG.error("Error ContainerResponseWriter ", error);
+				try {
+					contentBuffer.release();
+				} catch (Exception e) {}
 			}
 
 			@Override
 			public boolean enableResponseBuffering() {
-				// TODO Auto-generated method stub
 				return false;
 			}
         };
